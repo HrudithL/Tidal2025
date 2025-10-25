@@ -1,0 +1,7 @@
+{
+  "MODEL_SIZE": "small",
+  "GEMINI_API_KEY": "",
+  "HF_HOME": "/opt/ml/model/huggingface_cache",
+  "TORCH_HOME": "/opt/ml/model/torch_cache",
+  "SM_LOG_LEVEL": "INFO"
+}

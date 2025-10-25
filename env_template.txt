@@ -1,0 +1,11 @@
+# AWS Credentials
+AWS_ACCESS_KEY_ID=your_access_key_here
+AWS_SECRET_ACCESS_KEY=your_secret_key_here
+AWS_SESSION_TOKEN=
+AWS_DEFAULT_REGION=us-west-2
+
+# SageMaker Configuration
+SAGEMAKER_BUCKET_NAME=sonicmuse-models-0ubdu3d6
+SAGEMAKER_ENDPOINT_NAME=sonicmuse-endpoint
+SAGEMAKER_INSTANCE_TYPE=ml.m5.xlarge
+MODEL_SIZE=small

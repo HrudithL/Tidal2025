@@ -1,0 +1,3 @@
+# Minimal requirements for CPU-only processing
+soundfile>=0.12.0
+numpy>=1.21.0
