@@ -1,0 +1,62 @@
+Backend API Contract (FastAPI)
+
+Base URL
+- https://<api-domain>/api/
+
+Endpoints
+1) GET /health
+  -> { "ok": true, "gpu": true, "models": {"whisper":"small","musicgen":"small"} }
+
+2) POST /analyze
+  Content-Type: multipart/form-data; file=audio
+  Behavior:
+    - Convert to mono 16 kHz.
+    - Run ASR to get transcript + timestamps.
+    - Compute energy curve (RMS), pitch f0 curve (CREPE), speech rate (wpm), pauses.
+    - Map to mood bins: {bright, calm, tense, dark, busy}.
+    - Estimate tempo_hint from syllable density.
+    - Detect key: choose from Cmaj/Amin default; configurable.
+  Response:
+  {
+    "transcript": "...",
+    "segments": [{"t0":0.0,"t1":2.1,"text":"..."}, ...],
+    "features": {
+      "energy_curve": [...],
+      "f0_curve": [...],
+      "speech_rate_wpm": 145,
+      "pause_timestamps": [2.3, 5.8]
+    },
+    "controls": {
+      "mood": "calm",
+      "tempo_bpm": 90,
+      "key": "Cmaj",
+      "style_id": "ambient_calm"
+    },
+    "prompt": "Ambient cinematic pads, calm, 90 BPM, key C major, light percussion"
+  }
+
+3) POST /generate
+  Content-Type: application/json
+  Body: { "prompt": str, "duration": int, "seed": int, "melody_ref": null|float[], "tempo_bpm": int, "key": "Cmaj" }
+  -> Returns audio/wav bytes (background music only)
+
+4) POST /mix
+  Content-Type: multipart/form-data; file_dialogue=audio; file_bg=audio; params: {bg_db:int, ducking:float}
+  Behavior:
+    - Loudness normalize dialogue to target LUFS (e.g., -16).
+    - Apply sidechain‑style ducking of BG during speech segments.
+    - Output stereo 32 kHz WAV.
+  -> Returns mixed WAV bytes
+
+5) POST /compose   (one‑shot endpoint for UX)
+  multipart/form-data: file=audio; fields: {duration:int, seed:int, intensity:float (0..1)}
+  Behavior: analyze -> build prompt -> generate -> mix
+  -> Returns JSON { urls or bytes } and includes the prompt used.
+
+6) POST /script-to-bg  (stretch)
+  JSON: { "script": str, "duration": int, "style":"ambient|lofi|orchestral", "intensity":0..1 }
+  Steps:
+    - Use Gemini to summarize sections and emotions over time.
+    - Build mood timeline and prompts per section.
+    - Generate and stitch sections (crossfades).
+  -> Returns bg-only WAV bytes.

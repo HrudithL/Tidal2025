@@ -1,0 +1,68 @@
+Aural Architect — How to Train (Adapter Only)
+
+Goal
+- No heavy training. Train a tiny adapter that maps time-varying analysis features into control parameters for MusicGen + a stem balancer.
+- Keep inference fast and reproducible.
+
+1) Features (per 2 s frame)
+- z_clap: 512-D CLAP embedding of audio frame.
+- f0_stats: [median_f0, iqr_f0] normalized.
+- energy: RMS normalized [0..1].
+- beat_strength: scalar from librosa beat tracker.
+- tags: top-5 AudioSet tags via CLAP text similarity (multi-hot 5 dims).
+
+Concatenate → x_t ∈ R^(512+2+1+1+5) = 521 dims.
+
+2) Targets (per section)
+- emotion class y_emotion ∈ {bright, calm, tense, dark, busy}
+- bpm y_bpm ∈ [60,160]
+- key y_key ∈ 14 classes (7×2)
+- style_id y_style ∈ K prompt table ids
+
+3) Adapter Models
+- Emotion head: MLP 521→128→5 softmax (cross-entropy).
+- BPM regressor: MLP 521→128→1 (L1 loss, clamp 60..160).
+- Key classifier: MLP 521→128→14 softmax.
+- Style classifier: MLP 521→128→K softmax.
+
+Train jointly with loss:
+L = CE(emotion) + 0.5 * L1(bpm) + 0.5 * CE(key) + CE(style)
+
+4) Data Creation (Synthetic Supervision)
+- For each training clip in data/inputs except held-out eval:
+  a) Compute features per frame.
+  b) Derive weak labels:
+     - emotion: map CLAP tag keywords to bins using rules.
+     - bpm: from beat tracker smoothed; default 90.
+     - key: from f0 histogram; fall back Cmaj/Amin.
+     - style: rule-map from (emotion, energy) to prompt id.
+  c) Aggregate to 3 sections: intro/build/release via k-means on energy.
+  d) Save (X_section, y_section) to npz.
+
+This creates 30–60 supervision samples in minutes.
+
+5) Training Loop (PyTorch)
+- Batch sections. Shuffle.
+- Optim: AdamW lr=3e-4, weight decay 1e-3, epochs 30.
+- Early stop on eval L decreasing 5 epochs.
+- Save: models/adapter.pt via torch.save.
+
+6) Validation
+- On held-out eval inputs:
+  - Predict section controls.
+  - Render short 15 s segments with MusicGen using predicted prompts/BPM.
+  - Compute MatchScore and TempoCorr.
+- Target: MatchScore ≥ baseline +0.1, TempoCorr ≥ 0.3.
+
+7) Reproducibility
+- Set seeds for torch and numpy.
+- Log versions and hyperparams to a JSON in models/metadata.json.
+
+8) Optional Fine-tunes
+- Small linear probe mapping CLAP→MusicGen text embedding space to reduce prompt reliance.
+- Per-style temperature schedule.
+
+9) Commands (examples)
+python scripts/analyze.py --in data/inputs --out data/cache
+python scripts/train_adapter.py --cache data/cache --out models/adapter.pt
+python scripts/eval_metrics.py --in data/eval --adapter models/adapter.pt --report reports/eval.json

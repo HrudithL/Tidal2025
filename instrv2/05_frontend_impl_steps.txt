@@ -1,0 +1,42 @@
+Frontend Implementation Steps (React + Vite + TS)
+
+1) Create app
+npm create vite@latest sonicmuse -- --template react-ts
+cd sonicmuse
+npm i axios wavesurfer.js d3 tailwindcss postcss autoprefixer
+npx tailwindcss init -p
+
+2) Structure
+src/
+  components/
+    Uploader.tsx
+    AnalysisChips.tsx
+    Waveform.tsx
+    Controls.tsx
+    Player.tsx
+    EmotionArc.tsx
+  pages/App.tsx
+  api.ts
+  types.ts
+
+3) Flow
+- Uploader -> POST /analyze -> show chips (mood, tempo, key) and curve
+- Controls: intensity, duration, seed, style dropdown
+- Generate: POST /compose -> receive mixed WAV -> Player with download
+- Show prompt preview and "Regenerate" button
+
+4) Accessibility
+- Keyboard controls for player
+- Clear labels and live region for status
+
+5) Config
+- VITE_API_BASE=https://api.example.com/api
+- CORS allow frontend origin on backend
+
+6) Styling
+- Tailwind utility classes
+- Responsive layout for mobile recording
+
+7) Error states
+- Show toast on 4xx/5xx
+- Disable Generate while processing

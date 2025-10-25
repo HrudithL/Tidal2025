@@ -1,0 +1,101 @@
+LLM Prompt Pack for Cursor — Aural Architect
+Save as: cursor_prompts.txt
+
+---------------------------------------------
+[GLOBAL SYSTEM PROMPT]
+You are a code generator assistant. Produce minimal, correct, production-ready code. 
+Respect file paths I specify. Create missing folders. Add brief comments only where needed.
+Do not invent APIs. If a library is used, import it.
+All Python code must pass flake8. All TS code must type-check.
+
+---------------------------------------------
+[TASK 1: Back-end skeleton (FastAPI)]
+Create backend/app.py with endpoints:
+- GET /health : returns {"ok": true, "gpu": bool}
+- POST /analyze : multipart file "file", returns JSON {bpm,key,emotion,energy_curve,style_id,prompt}
+- POST /compose : multipart file "file" plus optional form fields duration(int, default=60), seed(int, default=42). Returns audio/wav bytes.
+
+Constraints:
+- Preload CLAP, CREPE, MusicGen-small, and adapter.pt if present.
+- Implement analyze(audio_bytes) -> dict using librosa + CLAP + CREPE.
+- Implement build_prompt(analysis) -> str using rules in prompt table (hardcode 6 rules).
+- Implement generate_music(prompt, bpm, key, duration, seed) -> wav bytes using audiocraft MusicGen.
+- Enforce max input length 30 s. Downsample to 16 kHz mono before feature extraction.
+- Add simple logging.
+Also create backend/requirements.txt with pinned versions:
+fastapi==0.115.0
+uvicorn==0.30.6
+torch==2.3.1
+torchaudio==2.3.1
+audiocraft==1.3.0
+librosa==0.10.1
+soundfile==0.12.1
+numpy==1.26.4
+pydub==0.25.1
+einops==0.8.0
+transformers==4.43.3
+huggingface_hub==0.23.4
+crepe==0.0.15
+
+Also add backend/Dockerfile using CUDA 12 runtime and ffmpeg, and a docker-compose.yml at repo root with the API service exposing 8000 with NVIDIA runtime.
+
+---------------------------------------------
+[TASK 2: Adapter training script]
+Create scripts/analyze.py:
+- Walk data/inputs, compute per-frame features (CLAP 512, f0 stats, energy, beat_strength, 5 tag multi-hot).
+- Save numpy arrays to data/cache/<name>.npz.
+
+Create scripts/train_adapter.py:
+- Load cached features, synthesize weak labels (emotion/binning rules, bpm clamp, key guess).
+- Aggregate frames to 3 sections via k-means on energy.
+- Train 4 small MLP heads in PyTorch (single shared trunk optional).
+- Save to models/adapter.pt and models/metadata.json.
+
+Create scripts/eval_metrics.py:
+- For each file in data/eval, run adapter->controls.
+- Render short 15 s with generate_music (stub that calls API if available).
+- Compute CLAP cosine similarity and report mean scores to reports/eval.json.
+
+---------------------------------------------
+[TASK 3: Frontend app]
+Create frontend (Vite + React + TS) with:
+- Upload component.
+- Analysis chips (emotion, bpm, key, style).
+- Prompt editor textarea with "Reset to suggested".
+- Seed numeric input, duration slider.
+- Generate button calls /compose, shows loading.
+- Player with download.
+- D3 emotion arc chart from energy_curve.
+
+Add tailwind. Provide scripts in package.json: dev, build, preview.
+
+---------------------------------------------
+[TASK 4: Nginx + deploy]
+Create deploy/nginx.conf for static front-end at / and proxy /api to 127.0.0.1:8000/
+Create deploy/README_DEPLOY.md with steps for Ubuntu on EC2:
+- Install Docker, docker-compose, Nginx.
+- Build front-end, copy dist to /var/www/aa_frontend.
+- Enable server block, restart Nginx.
+- Optional certbot notes.
+
+---------------------------------------------
+[TASK 5: Smoke tests]
+Create tests/smoke_backend.py:
+- Hit /health.
+- Post a 5 s sine wave to /analyze.
+- Call /compose with duration=8, verify WAV header and length.
+
+---------------------------------------------
+[CONSTRAINTS]
+- Use only listed libraries.
+- Pin exact versions.
+- Keep functions small and testable.
+- Log errors with stack traces.
+- Avoid global mutable state except model singletons.
+
+---------------------------------------------
+[ACCEPTANCE]
+- docker compose up brings API online.
+- npm run build creates dist and the app runs.
+- /compose returns valid audio bytes within 20 s for 60 s duration on T4.
+- tests/smoke_backend.py passes.

@@ -1,0 +1,22 @@
+Environment & Security
+
+.env (backend)
+TORCH_HOME=/models
+HF_HOME=/models
+CORS_ALLOW_ORIGINS=https://your-frontend.vercel.app
+GEMINI_API_KEY=*** (optional)
+
+Limits
+- Max upload size 30 MB
+- Max duration 90 s
+- Timeouts 60 s per request
+
+Abuse mitigation
+- Rate-limit by IP (Nginx)
+- Reject non-audio mimetypes
+- Sanitize filenames and never write untrusted paths
+
+Logging
+- Request ID per call
+- Duration metrics
+- Model errors with stack traces

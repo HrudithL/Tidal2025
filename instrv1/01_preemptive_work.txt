@@ -1,0 +1,80 @@
+Aural Architect — Preemptive Work (Before Training)
+
+Goal
+- Lock inputs, outputs, and metrics.
+- Download checkpoints and verify GPU.
+- Prepare minimal datasets and eval scripts.
+- Avoid scope creep.
+
+1) Define Inputs and Outputs
+- Input: 10–30 s mono WAV, 16 kHz, environmental or speech.
+- Output: 60 s stereo WAV, 32 kHz, loopable tail, stems optional.
+- Modes: 
+  - Soundscape→Score (primary)
+  - Speech→Song (stretch)
+
+2) Fixed Ontology
+- Emotion bins: {bright, calm, tense, dark, busy}.
+- Energy ∈ [0,1] from RMS loudness.
+- Tempo_hint ∈ [60, 160] BPM from beat tracking.
+- Key: {C,D,E,F,G,A,B} × {maj,min}. Default Cmaj if unknown.
+
+3) File Layout
+aural_architect/
+  data/
+    inputs/              # raw audio for analysis and demos
+    eval/                # fixed small set for metrics
+    cache/               # model weights and embeddings
+  models/
+    musicgen/            # preload MusicGen weights
+    clap/                # CLAP encoder
+    crepe/               # CREPE model
+  scripts/
+    analyze.py
+    train_adapter.py
+    infer_music.py
+    eval_metrics.py
+  backend/
+  frontend/
+
+4) Hardware Check
+- Target: AWS EC2 g4dn.xlarge (T4 GPU).
+- Drivers: CUDA 12 runtime.
+- Sanity:
+  - python -c "import torch; print(torch.cuda.is_available())"
+  - nvidia-smi
+
+5) Model Artifacts (pretrained)
+- CLAP encoder: laion/clap-htsat-unfused
+- CREPE: full or tiny for f0
+- MusicGen: facebook/musicgen-small and musicgen-melody
+- Optional: EnCodec 32k for vocoding
+
+6) Minimal Dataset
+- Collect 10–20 short inputs across:
+  - rain, café, park, street, office, speech male, speech female.
+- Store in data/inputs. Keep 3–5 for eval only.
+
+7) Prompt Tables (YAML)
+- Map (emotion, energy band, key) → MusicGen style prompt.
+Example entry:
+  - id: ambient_calm
+    when: {emotion: calm, energy: low}
+    prompt: "Ambient cinematic pads, soft textures, minimal percussion"
+  - id: tense_dark
+    when: {emotion: tense, energy: high}
+    prompt: "Tense hybrid orchestral, driving percussion, low drones"
+
+8) Metrics Definition
+- MatchScore: CLAP similarity between input audio and generated track.
+- TempoCorr: Pearson corr(input RMS derivative, output tempo envelope).
+- Subjective: 1–5 alignment rating by 3 people.
+- Latency: end-to-end seconds for 60 s generation.
+
+9) Risks
+- Model load time → preload on service start.
+- Noisy inputs → denoise light gate (RNNoise/WebRTC).
+- Drifted keys → clamp to Cmaj/Amin for demo stability.
+
+10) Git Hygiene
+- Lock versions in requirements.txt.

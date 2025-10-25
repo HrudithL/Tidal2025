@@ -1,0 +1,16 @@
+SonicMuse — Speech-Aware AI Background Music Generator
+Goal
+- Build a full‑stack app that takes a speech audio track and generates properly overlaid AI background music that fits the dialogue's pacing and mood.
+- Host the web app online and connect to a GPU-enabled backend via simple APIs.
+- Stretch: support script‑text → background music with customization, optionally using Google Gemini.
+
+Deliverables
+- Frontend SPA with upload, analysis preview, controls, and downloadable mixed audio.
+- Backend API with speech analysis, prompt building, music generation, and mixing.
+- Deployed site + API with HTTPS.
+- Optional text‑script mode with mood timeline editor.
+
+Key Constraints
+- Keep inference fast and reproducible.
+- No training required; use pretrained models.
+- Exact stack and versions pinned.

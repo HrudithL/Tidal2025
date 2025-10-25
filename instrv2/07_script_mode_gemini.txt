@@ -1,0 +1,28 @@
+Stretch: Script → Background Music (Gemini)
+
+Purpose
+- Accept a text script and generate a mood timeline and prompts, then produce background music.
+
+Flow
+1) POST /script-to-bg
+2) Use Gemini to segment and label each section:
+   Prompt:
+   "Given this script, split into up to 4 sections. For each, provide:
+    - start_ratio (0..1), end_ratio (0..1)
+    - mood in {bright, calm, tense, dark, busy}
+    - tempo_bpm (60..160)
+    - key (Cmaj/Amin default)
+    - style_id from preset table
+    Output JSON only."
+3) Build per-section prompts.
+4) Generate MusicGen for each section with durations proportional to section length.
+5) Crossfade and concatenate.
+6) Return bg-only WAV.
+
+Libraries
+- google-generativeai==0.7.2
+- Use GEMINI_API_KEY from env
+
+Customization UI
+- Sliders to adjust per-section mood/tempo after initial analysis.
+- Regenerate a single section in-place.

@@ -1,0 +1,46 @@
+Tech Stack (Pinned)
+Frontend
+- React 18 + Vite + TypeScript
+- TailwindCSS
+- Axios
+- Wavesurfer.js (waveform) + optional Spectrogram plugin
+- D3.js (mood curve)
+
+Backend
+- FastAPI 0.115.x + Uvicorn
+- PyTorch 2.3.1 + CUDA 12 runtime
+- torchaudio 2.3.1
+- audiocraft 1.3.0 (MusicGen)
+- faster-whisper 1.0 or openai-whisper (choose one; prefer faster‑whisper)
+- librosa 0.10.1
+- crepe 0.0.15 (pitch/intonation)
+- soundfile 0.12.1
+- numpy 1.26.4
+- pydub 0.25.1
+- transformers 4.43.3, huggingface_hub 0.23.4
+- python-dotenv 1.0.1
+- ffmpeg (system)
+
+Optional SDKs
+- google-generativeai (Gemini) 0.7.x for script analysis (stretch)
+
+Models
+- ASR: "Systran/faster-whisper-small" (or "medium" on bigger GPU)
+- Music: "facebook/musicgen-small" and "facebook/musicgen-melody"
+- Pitch: CREPE (full)
+- Vocoder: EnCodec integrated via MusicGen
+
+Datasets (for eval/demo only)
+- Mozilla Common Voice speech samples (varied speakers) — evaluation of speech robustness
+- Your own short project scripts for text mode
+
+Hosting
+- Frontend: Vercel (static) or Netlify
+- Backend: AWS EC2 g4dn.xlarge (T4 GPU). Ubuntu 22.04, Docker + nvidia-docker2
+- Storage (optional): AWS S3 for logs and exported WAVs
+- Domain & TLS: Nginx reverse proxy + Let’s Encrypt (if self-hosting domain)
+
+Environment Variables
+- HF_HOME, TORCH_HOME for caching
+- GEMINI_API_KEY (stretch)
+- CORS_ALLOW_ORIGINS (frontend origin)

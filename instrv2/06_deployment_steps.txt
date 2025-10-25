@@ -1,0 +1,24 @@
+Deployment Steps
+
+Backend (AWS EC2 g4dn.xlarge)
+- Ubuntu 22.04
+- Install Docker and nvidia-docker2
+- Clone repo
+- docker build -t sonicmuse-api ./backend
+- docker run --gpus all -p 8000:8000 --env-file .env sonicmuse-api
+
+Nginx reverse proxy
+- Proxy /api to 127.0.0.1:8000
+- Serve frontend static files from /var/www/sonicmuse
+
+Frontend (Vercel) — recommended
+- Set VITE_API_BASE to your API URL (https://<domain>/api)
+- npm run build
+- Deploy via Vercel; set CORS on API to include Vercel domain
+
+TLS
+- Use certbot on EC2 if serving API at your domain over HTTPS
+- Update CORS and frontend envs accordingly
+
+Caching
+- Warm start API to download model weights to EBS before demo

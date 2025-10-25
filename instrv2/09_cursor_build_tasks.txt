@@ -1,0 +1,45 @@
+Cursor Build Tasks (Executable Steps)
+
+Task 0 — Repo Init
+- Create folders: backend, frontend, deploy, scripts, reports
+- Add README with quickstart
+
+Task 1 — Backend Skeleton
+- Implement FastAPI with /health, /analyze, /generate, /mix, /compose
+- Add requirements.txt and Dockerfile
+- Acceptance: docker run exposes /health ok
+
+Task 2 — ASR + Features
+- Implement faster-whisper transcription and segmentation
+- Implement energy, f0, speech rate, pauses
+- Acceptance: /analyze returns valid JSON with curves
+
+Task 3 — Prompt Builder
+- Implement rules and preset table
+- Acceptance: /analyze returns prompt string
+
+Task 4 — Music Generation
+- Integrate MusicGen small, seedable
+- Acceptance: /generate returns valid WAV in <15 s for 30 s duration on T4
+
+Task 5 — Mixing with Ducking
+- Implement sidechain ducking based on ASR segments
+- Acceptance: /mix returns audible dialogue with tasteful BG at -18 dB default
+
+Task 6 — Compose One‑Shot
+- Wire analyze→prompt→generate→mix
+- Acceptance: /compose returns mixed WAV; log prompt used
+
+Task 7 — Frontend App
+- Build upload, analysis chips, controls, emotion arc, player
+- Acceptance: End‑to‑end flow works against staging API
+
+Task 8 — Deploy
+- Deploy backend on EC2 with Nginx proxy
+- Deploy frontend on Vercel
+- Acceptance: Public URL works over HTTPS
+
+Task 9 — Stretch Script Mode
+- Implement /script-to-bg using Gemini
+- Add UI tab for script mode with sliders
+- Acceptance: Generate and download bg-only WAV from text

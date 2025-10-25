@@ -1,0 +1,63 @@
+Aural Architect — Web Frontend and Deployment
+
+Goal
+- Single-page app. Upload audio, see analysis chips, emotion arc, piano-roll, and generated track.
+- Deployed behind Nginx or static host. API on port 8000.
+
+Stack
+- React + Vite + TypeScript
+- TailwindCSS
+- D3.js for emotion arc and piano-roll
+- Wavesurfer.js for waveform
+- Axios for API
+
+UI Flow
+- Top: uploader card (drag & drop). 
+- Middle-left: input waveform + spectrogram (optional).
+- Middle-right: analysis chips (emotion, BPM, key, style) + editable prompt.
+- Bottom: Generate button, seed selector, duration slider.
+- Output: player with download button, piano-roll animation synced.
+
+State
+- audioFile, analysis, prompt, seed, duration, jobStatus, outputBlobURL.
+
+API Calls
+- POST /analyze → show chips and suggested prompt.
+- POST /generate or /compose → stream back WAV, show player.
+
+Build
+npm create vite@latest aural-architect -- --template react-ts
+cd aural-architect
+npm i axios wavesurfer.js d3 tailwindcss postcss autoprefixer
+npx tailwindcss init -p
+
+tailwind.config.cjs -> content: ["./index.html","./src/**/*.{ts,tsx}"]
+
+Deployment Options
+1) Same EC2 host:
+   - Build: npm run build
+   - Serve static from Nginx at /, proxy /api → 8000
+   - Nginx server block:
+server {
+  listen 80;
+  root /var/www/aa_frontend/dist;
+  location /api/ { proxy_pass http://127.0.0.1:8000/; }
+}
+
+2) S3 + CloudFront (static)
+   - Upload dist/ to S3.
+   - API stays on EC2 with HTTPS.
+
+Accessibility
+- Keyboard controls for player.
+- Colorblind-safe chart hues by default.
+
+Telemetry (optional)
+- Log latency and errors to console or S3.
+
+Checklist
+- Drag-and-drop works on mobile.
+- Large files rejected with message.
+- Seed reproducibility validated.
+- Link “Copy prompt” button.
+- Fallback style if analysis missing.

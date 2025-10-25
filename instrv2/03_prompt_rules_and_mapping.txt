@@ -1,0 +1,40 @@
+Prompt Rules and Mapping
+
+Mood bins
+- bright, calm, tense, dark, busy
+
+Mapping heuristics
+- speech_rate_wpm high → increase tempo_bpm
+- high energy + high f0 variance → tense or busy
+- long pauses + low energy → calm or dark depending on f0 median
+
+Prompt template
+"{style}, {mood}, {tempo} BPM, key {key}, instrumentation: {instruments}, texture: {texture}, mix: {mix_hint}"
+
+Preset table (editable JSON)
+[
+  {
+    "id":"ambient_calm",
+    "when":{"mood":"calm"},
+    "style":"Ambient cinematic",
+    "instruments":"pads, soft piano, light shaker",
+    "texture":"wide, airy, minimal movement",
+    "mix_hint":"sidechained lightly to speech"
+  },
+  {
+    "id":"lofi_bright",
+    "when":{"mood":"bright"},
+    "style":"Lo-fi hip hop",
+    "instruments":"soft drums, Rhodes, gentle bass",
+    "texture":"warm, cozy",
+    "mix_hint":"mono-friendly center"
+  },
+  {
+    "id":"orchestral_tense",
+    "when":{"mood":"tense"},
+    "style":"Hybrid orchestral",
+    "instruments":"low strings, pulses, light percussion",
+    "texture":"driving, evolving",
+    "mix_hint":"less midrange to avoid masking voice"
+  }
+]

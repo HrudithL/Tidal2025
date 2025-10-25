@@ -1,0 +1,83 @@
+Aural Architect — Backend Usage (FastAPI)
+
+Goal
+- Serve analysis and generation with GPU.
+- Preload models. Stateless endpoints.
+
+Dependencies
+- torch, torchaudio, audiocraft (MusicGen), librosa, numpy, soundfile
+- clap (via huggingface), crepe, fastapi, uvicorn, pydub
+
+Endpoints
+1) POST /analyze
+  Body: multipart/form-data file=audio.wav
+  Returns: {bpm, key, emotion, energy_curve[], style_id, prompt}
+
+2) POST /generate
+  Body: JSON {prompt, bpm, key, duration, seed}
+  Returns: audio WAV bytes (application/octet-stream)
+
+3) POST /compose
+  Body: multipart/form-data file=audio.wav {duration, seed}
+  Steps:
+    - /analyze pipeline inside
+    - Build prompt from adapter outputs
+    - Call MusicGen
+    - Return WAV
+
+Model Preload (pseudocode)
+- Load CLAP, CREPE, adapter.pt, MusicGen small.
+- Warmup generate with a 2 s dummy.
+
+WAV Handling
+- Accept any common format; convert to mono 16 kHz on load.
+- Output stereo 32 kHz, add 300 ms tail for loopability.
+
+Security
+- Max upload 30 MB.
+- Timeout per request 60 s.
+- Reject >30 s inputs.
+- No persistent storage unless LOGS=true.
+
+Dockerfile (CUDA runtime)
+FROM nvidia/cuda:12.2.0-runtime-ubuntu22.04
+RUN apt-get update && apt-get install -y python3-pip ffmpeg && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+EXPOSE 8000
+CMD ["uvicorn","app:app","--host","0.0.0.0","--port","8000"]
+
+docker-compose.yml
+version: "3.8"
+services:
+  api:
+    build: ./backend
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    ports: ["8000:8000"]
+
+Example FastAPI Skeleton
+- app.py:
+from fastapi import FastAPI, UploadFile, File
+from fastapi.responses import StreamingResponse, JSONResponse
+import io
+app = FastAPI()
+
+@app.post("/analyze")
+async def analyze(file: UploadFile = File(...)):
+    wav = await file.read()
+    # run analyze()
+    return JSONResponse({...})
+
+@app.post("/compose")
+async def compose(file: UploadFile = File(...), duration: int = 60, seed: int = 42):
+    wav = await file.read()
+    # features -> adapter -> prompt -> musicgen
+    out_wav_bytes = b"..."
+    return StreamingResponse(io.BytesIO(out_wav_bytes), media_type="application/octet-stream")
+
+Health
+- GET /health -> {"ok": true, "gpu": torch.cuda.is_available()}
